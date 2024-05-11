@@ -3,6 +3,11 @@ Create and manage socket connections.
 Login and logout functionality.
 Error handling and status management.
 */
+/*
+Create and manage socket connections.
+Login and logout functionality.
+Error handling and status management.
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +25,7 @@ Error handling and status management.
 int create_socket(char *hostname, int port);
 SSL_CTX* init_ssl_context(void);
 void cleanup(SSL_CTX *ctx, int sock, SSL *ssl);
+SSL* create_ssl_connection(char *hostname, int port, SSL_CTX *ctx);
 
 // 创建与IMAP服务器的连接
 int create_socket(char *hostname, int port) {
@@ -67,6 +73,21 @@ SSL_CTX* init_ssl_context(void) {
     return ctx;
 }
 
+// 创建SSL连接
+SSL* create_ssl_connection(char *hostname, int port, SSL_CTX *ctx) {
+    int sock = create_socket(hostname, port);
+    SSL *ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, sock);
+    if (SSL_connect(ssl) != 1) {
+        ERR_print_errors_fp(stderr);
+        SSL_free(ssl);
+        close(sock);
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
+    }
+    return ssl;
+}
+
 // 清理资源
 void cleanup(SSL_CTX *ctx, int sock, SSL *ssl) {
     if (ssl) {
@@ -78,28 +99,19 @@ void cleanup(SSL_CTX *ctx, int sock, SSL *ssl) {
 }
 
 int main(int argc, char **argv) {
-    int sock;
     SSL_CTX *ctx;
     SSL *ssl;
 
     // 初始化SSL库和创建SSL上下文
     ctx = init_ssl_context();
 
-    // 创建socket并连接到IMAP服务器（此处仅为示例，实际使用时需根据实际情况修改）
-    sock = create_socket("imap.example.com", IMAP_SSL_PORT);
-
-    // 基于已建立的socket创建SSL结构
-    ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sock);
-    if (SSL_connect(ssl) != 1) {
-        ERR_print_errors_fp(stderr);
-        cleanup(ctx, sock, ssl);
-        exit(EXIT_FAILURE);
-    }
+    // 创建SSL连接到IMAP服务器
+    ssl = create_ssl_connection("imap.example.com", IMAP_SSL_PORT, ctx);
 
     // 登录、发送命令和处理响应的代码可以在此处继续添加
+    // 示例代码，具体实现根据需求编写
 
     // 清理资源
-    cleanup(ctx, sock, ssl);
+    cleanup(ctx, SSL_get_fd(ssl), ssl);
     return 0;
 }
