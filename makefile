@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -Werror -I/usr/include/openssl
-LDFLAGS=-lssl -lcrypto
+CFLAGS=-Wall -Werror
+LDFLAGS=-Wall -Werror
 
 EXE=fetchmail
 SOURCES=$(wildcard *.c)
