@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "connection.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,32 +8,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <openssl/ssl.h>
-
-
-void send_command(SSL *ssl, const char *command) {
-    if (SSL_write(ssl, command, strlen(command)) <= 0) {
-        ERR_print_errors_fp(stderr);
-        exit(EXIT_FAILURE);
-    }
-}
-
-char* receive_response(SSL *ssl) {
-    char *response = malloc(4096);
-    if (!response) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    int nbytes = SSL_read(ssl, response, 4096 - 1);
-    if (nbytes < 0) {
-        ERR_print_errors_fp(stderr);
-        free(response);
-        exit(EXIT_FAILURE);
-    }
-
-    response[nbytes] = '\0';
-    return response;
-}
 
 void login_imap(SSL *ssl, const char *username, const char *password) {
     char command[1024];
@@ -60,9 +35,9 @@ void select_folder(SSL *ssl, const char *folder) {
     free(response);
 }
 
-char* fetch_email(SSL *ssl, const char *messageNum) {
+void fetch_email(SSL *ssl, const char *messageNum) {
     char command[1024];
-    snprintf(command, sizeof(command), (messageNum && strlen(messageNum) > 0) ? 
+    snprintf(command, sizeof(command), (messageNum && strlen(messageNum) > 0) ?
         "A03 FETCH %s BODY.PEEK[]\r\n" : "A03 FETCH 1:* BODY.PEEK[]\r\n", messageNum);
     send_command(ssl, command);
     char *response = receive_response(ssl);
@@ -74,6 +49,8 @@ char* fetch_email(SSL *ssl, const char *messageNum) {
     printf("%s", response);  // 打印邮件内容
     free(response);
 }
+
+
 
 
 // 解析邮件头部信息
@@ -281,4 +258,5 @@ SSL_CTX* init_ssl_context(void) {
 
     return ctx;
 }
+
 

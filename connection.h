@@ -5,5 +5,8 @@
 #define IMAP_SSL_PORT 993
 
 
+void send_command(SSL *ssl, const char *command);
+char* receive_response(SSL *ssl);
+
 
 #endif

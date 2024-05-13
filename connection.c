@@ -4,26 +4,25 @@
 #include <unistd.h>
 #include <string.h>
 
-void send_command(int sockfd, const char *command) {
-    int len = strlen(command);
-    if (write(sockfd, command, len) != len) {
-        perror("Failed to write to socket");
+void send_command(SSL *ssl, const char *command) {
+    if (SSL_write(ssl, command, strlen(command)) <= 0) {
+        ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 }
 
-char* receive_response(int sockfd) {
-    char *response = malloc(4096); // allocate buffer
-    if (response == NULL) {
+char* receive_response(SSL *ssl) {
+    char *response = malloc(4096);
+    if (!response) {
         fprintf(stderr, "Memory allocation failed\n");
-        exit(EXIT_FAILURE);
+        return NULL;  // 更改为返回 NULL
     }
 
-    int nbytes = read(sockfd, response, 4096);
+    int nbytes = SSL_read(ssl, response, 4096 - 1);
     if (nbytes < 0) {
-        perror("Failed to read from socket");
+        ERR_print_errors_fp(stderr);
         free(response);
-        exit(EXIT_FAILURE);
+        return NULL;  // 更改为返回 NULL
     }
 
     response[nbytes] = '\0';
