@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     const char *command = NULL;
     const char *server_name = NULL;
     const char *messageNum = NULL;
-    int use_tls = 0; // 默认不使用TLS
+    int use_tls = 0, port; // 默认不使用TLS
 
     // 解析命令行参数
     for (int i = 1; i < argc; i++) {
@@ -38,20 +38,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 根据是否使用TLS设置端口号
     int port = use_tls ? IMAP_SSL_PORT : IMAP_PORT;
     SSL *ssl = create_socket(server_name, port, use_tls);
 
-    if (ssl == NULL && use_tls) {
+    if (!ssl) {
         fprintf(stderr, "Failed to establish SSL connection.\n");
-        return 1;
+        return 2;
     }
 
-    // 登录和选择文件夹
+
     login_imap(ssl, username, password);
     select_folder(ssl, folder);
     
-    // 执行具体命令
     if (strcmp(command, "retrieve") == 0) {
         fetch_email(ssl, messageNum);
     } else if (strcmp(command, "parse") == 0) {
