@@ -16,6 +16,23 @@ void send_command(int sockfd, const char *command) {
     }
 }
 
+// char* receive_response(int sockfd) {
+//     char *response = malloc(4096);
+//     if (!response) {
+//         fprintf(stderr, "Memory allocation failed\n");
+//         return NULL;
+//     }
+
+//     int nbytes = recv(sockfd, response, 4096 - 1, 0);
+//     if (nbytes < 0) {
+//         perror("recv failed");
+//         free(response);
+//         return NULL;
+//     }
+
+//     response[nbytes] = '\0';
+//     return response;
+// }
 char* receive_response(int sockfd) {
     char *response = malloc(4096);
     if (!response) {
@@ -23,16 +40,28 @@ char* receive_response(int sockfd) {
         return NULL;
     }
 
-    int nbytes = recv(sockfd, response, 4096 - 1, 0);
-    if (nbytes < 0) {
-        perror("recv failed");
-        free(response);
-        return NULL;
+    int total_bytes = 0;
+    int nbytes;
+    while (total_bytes < 4095) {
+        nbytes = recv(sockfd, response + total_bytes, 4095 - total_bytes, 0);
+        if (nbytes < 0) {
+            perror("recv failed");
+            free(response);
+            return NULL;
+        }
+        if (nbytes == 0) {  // No more data
+            break;
+        }
+        total_bytes += nbytes;
+        response[total_bytes] = '\0';  // Ensure null-termination
+        if (strstr(response, "A01 OK")) {  // Check if the end condition is met
+            break;
+        }
     }
 
-    response[nbytes] = '\0';
     return response;
 }
+
 
 void login_imap(int sockfd, const char *username, const char *password) {
     char command[1024];
