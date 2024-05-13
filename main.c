@@ -39,31 +39,26 @@ int main(int argc, char *argv[]) {
     }
 
     int port = use_tls ? IMAP_SSL_PORT : IMAP_PORT;
-    SSL *ssl = create_socket(server_name, port, use_tls);
-
-    if (ssl == NULL && use_tls) {
-        fprintf(stderr, "Failed to establish SSL connection.\n");
-        return 2;
-    }
+    int sockfd = create_socket(server_name, port); 
+    
 
     // 登录和选择文件夹
-    login_imap(ssl, username, password);
-    select_folder(ssl, folder);
+    login_imap(sockfd, username, password);
+    select_folder(sockfd, folder);
     
     // 执行具体命令
     if (strcmp(command, "retrieve") == 0) {
-        fetch_email(ssl, messageNum);
+        fetch_email(sockfd, messageNum);
     } else if (strcmp(command, "parse") == 0) {
-        parse_email_headers(ssl, messageNum);
+        parse_email_headers(sockfd, messageNum);
     } else if (strcmp(command, "mime") == 0) {
-        decode_mime_message(ssl, messageNum);
+        decode_mime_message(sockfd, messageNum);
     } else if (strcmp(command, "list") == 0) {
-        list_email_subjects(ssl);
+        list_email_subjects(sockfd);
     }
 
     // 清理
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
+    close(sockfd);
     exit(0); // 成功执行后退出
 }
 

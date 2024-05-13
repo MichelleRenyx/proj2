@@ -1,21 +1,22 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
+#define IMAP_PORT 143
+#define IMAP_SSL_PORT 993
 
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>  // 对于 close()
 
-// #define IMAP_PORT 143
-// #define IMAP_SSL_PORT 993
 
-SSL* create_socket(const char *hostname, int port, int use_tls);
-SSL_CTX* init_ssl_context(void);
-
-// void send_login_command(SSL *ssl, const char *username, const char *password);
-void fetch_email(SSL *ssl, const char *command);
-void login_imap(SSL *ssl, const char *username, const char *password);
-void select_folder(SSL *ssl, const char *folder);
-void parse_email_headers(SSL *ssl, const char *messageNum);
-void decode_mime_message(SSL *ssl, const char *messageNum);
-void list_email_subjects(SSL *ssl);
+int create_socket(const char *hostname, int port);  // 移除 use_tls 参数，更新返回类型
+void fetch_email(int sockfd, const char *messageNum);
+void login_imap(int sockfd, const char *username, const char *password);
+void select_folder(int sockfd, const char *folder);
+void parse_email_headers(int sockfd, const char *messageNum);
+void decode_mime_message(int sockfd, const char *messageNum);
+void list_email_subjects(int sockfd);
+void send_command(int sockfd, const char *command);
+char* receive_response(int sockfd);
 
 #endif

@@ -1,12 +1,12 @@
-#ifndef CONNECTION_H
-#define CONNECTION_H
+// #ifndef CONNECTION_H
+// #define CONNECTION_H
 
-#define IMAP_PORT 143
-#define IMAP_SSL_PORT 993
-
-
-void send_command(SSL *ssl, const char *command);
-char* receive_response(SSL *ssl);
+// #define IMAP_PORT 143
+// #define IMAP_SSL_PORT 993
 
 
-#endif
+// void send_command(SSL *ssl, const char *command);
+// char* receive_response(SSL *ssl);
+
+
+// #endif
