@@ -3,25 +3,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
 
-void send_command(int sockfd, const char *command) {
-    int len = strlen(command);
-    if (write(sockfd, command, len) != len) {
-        perror("Failed to write to socket");
+
+void send_command(SSL *ssl, const char *command) {
+    if (SSL_write(ssl, command, strlen(command)) <= 0) {
+        ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 }
 
-char* receive_response(int sockfd) {
+char* receive_response(SSL *ssl) {
     char *response = malloc(4096);
     if (!response) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
 
-    int nbytes = read(sockfd, response, 4096 - 1);
+    int nbytes = SSL_read(ssl, response, 4096 - 1);
     if (nbytes < 0) {
-        perror("Failed to read from socket");
+        ERR_print_errors_fp(stderr);
         free(response);
         exit(EXIT_FAILURE);
     }
@@ -30,11 +34,11 @@ char* receive_response(int sockfd) {
     return response;
 }
 
-void login_imap(int sockfd, const char *username, const char *password) {
+void login_imap(SSL *ssl, const char *username, const char *password) {
     char command[1024];
     snprintf(command, sizeof(command), "A01 LOGIN %s %s\r\n", username, password);
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A01 OK") == NULL) {
         printf("Login failure\n");
         free(response);
@@ -43,11 +47,11 @@ void login_imap(int sockfd, const char *username, const char *password) {
     free(response);
 }
 
-void select_folder(int sockfd, const char *folder) {
+void select_folder(SSL *ssl, const char *folder) {
     char command[1024];
     snprintf(command, sizeof(command), "A02 SELECT %s\r\n", folder);
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A02 OK") == NULL) {
         printf("Folder not found\n");
         free(response);
@@ -56,43 +60,38 @@ void select_folder(int sockfd, const char *folder) {
     free(response);
 }
 
-void fetch_email(int sockfd, const char *messageNum) {
+void fetch_email(SSL *ssl, const char *messageNum) {
     char command[1024];
-    if (messageNum != NULL && strlen(messageNum) > 0) {
-        snprintf(command, sizeof(command), "A03 FETCH %s BODY.PEEK[]\r\n", messageNum);
-    } else {
-        snprintf(command, sizeof(command), "A03 FETCH 1:* BODY.PEEK[]\r\n");  // 假设这样来获取最后一封邮件
-    }
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    snprintf(command, sizeof(command), (messageNum && strlen(messageNum) > 0) ? 
+        "A03 FETCH %s BODY.PEEK[]\r\n" : "A03 FETCH 1:* BODY.PEEK[]\r\n", messageNum);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A03 OK") == NULL) {
         printf("Message not found\n");
         free(response);
         exit(3);
     }
-    printf("%s", response);  // 输出邮件内容
+    printf("%s", response);  // 打印邮件内容
     free(response);
 }
 
 
-void parse_email_headers(int sockfd, const char *messageNum) {
+// 解析邮件头部信息
+void parse_email_headers(SSL *ssl, const char *messageNum) {
     char command[1024];
-    if (messageNum != NULL && strlen(messageNum) > 0) {
-        snprintf(command, sizeof(command), "A04 FETCH %s BODY.PEEK[HEADER]\r\n", messageNum);
-    } else {
-        snprintf(command, sizeof(command), "A04 FETCH 1:* BODY.PEEK[HEADER]\r\n");  // 假设这样来获取最后一封邮件的头部
-    }
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    snprintf(command, sizeof(command), (messageNum && strlen(messageNum) > 0) ? 
+        "A04 FETCH %s BODY.PEEK[HEADER]\r\n" : "A04 FETCH 1:* BODY.PEEK[HEADER]\r\n", messageNum);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A04 OK") == NULL) {
         printf("Message not found\n");
         free(response);
         exit(3);
     }
 
-    // 处理和打印邮件头部信息
+    // 解析并打印邮件头部信息
     char *line = strtok(response, "\r\n");
-    while (line != NULL) {
+    while (line) {
         if (strncasecmp(line, "From: ", 6) == 0) {
             printf("From: %s\n", line + 6);
         } else if (strncasecmp(line, "To: ", 4) == 0) {
@@ -108,15 +107,16 @@ void parse_email_headers(int sockfd, const char *messageNum) {
 }
 
 
-void decode_mime_message(int sockfd, const char *messageNum) {
+// 解码 MIME 消息
+void decode_mime_message(SSL *ssl, const char *messageNum) {
     char command[1024];
     if (messageNum != NULL && strlen(messageNum) > 0) {
         snprintf(command, sizeof(command), "A05 FETCH %s BODY.PEEK[]\r\n", messageNum);
     } else {
-        snprintf(command, sizeof(command), "A05 FETCH 1:* BODY.PEEK[]\r\n");  // 假设这样来获取最后一封邮件
+        snprintf(command, sizeof(command), "A05 FETCH 1:* BODY.PEEK[]\r\n");  // 获取最后一封邮件
     }
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A05 OK") == NULL) {
         printf("Message not found\n");
         free(response);
@@ -163,11 +163,12 @@ void decode_mime_message(int sockfd, const char *messageNum) {
 }
 
 
-void list_email_subjects(int sockfd) {
+// 列出邮件主题
+void list_email_subjects(SSL *ssl) {
     char command[1024];
     snprintf(command, sizeof(command), "A06 FETCH 1:* (BODY.PEEK[HEADER.FIELDS (SUBJECT)])\r\n");
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
+    send_command(ssl, command);
+    char *response = receive_response(ssl);
     if (strstr(response, "A06 OK") == NULL) {
         printf("Error retrieving subjects\n");
         free(response);
@@ -193,6 +194,65 @@ void list_email_subjects(int sockfd) {
         // 没有找到任何主题，可能邮箱为空
         exit(0);
     }
+}
 
-    free(response);
+SSL* create_socket(const char *hostname, int port, int use_tls) {
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Cannot create socket");
+        exit(EXIT_FAILURE);
+    }
+
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+
+    if (inet_pton(AF_INET, hostname, &server_addr.sin_addr) <= 0) {
+        perror("Invalid address");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Connection Failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    if (use_tls) {
+        SSL_CTX *ctx = init_ssl_context();
+        SSL *ssl = SSL_new(ctx);
+        SSL_set_fd(ssl, sockfd);
+        if (SSL_connect(ssl) != 1) {
+            ERR_print_errors_fp(stderr);
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+            SSL_CTX_free(ctx);
+            close(sockfd);
+            exit(EXIT_FAILURE);
+        }
+        return ssl;
+    } else {
+        // 非 TLS 连接的处理
+        SSL *ssl = SSL_new(init_ssl_context());  // 创建一个SSL结构，但不启动TLS
+        SSL_set_fd(ssl, sockfd);  // 将socket绑定到SSL结构
+        return ssl;  // 在非TLS模式下也返回SSL结构，但没有启动加密通信
+    }
+}
+
+SSL_CTX* init_ssl_context(void) {
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+    const SSL_METHOD *method = TLS_client_method();  // 使用更安全的 TLS 方法
+    SSL_CTX *ctx = SSL_CTX_new(method);
+    if (!ctx) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);  // 不验证证书
+
+    return ctx;
 }
