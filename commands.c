@@ -104,12 +104,12 @@ void login_imap(int sockfd, const char *username, const char *password) {
     send_command(sockfd, login_command);
 
     char response[1024];
-        if (response == NULL) {
-        printf("Failed to receive response from server.\n");
-        exit(3);
-    }
+    //     if (response == NULL) {
+    //     printf("Failed to receive response from server.\n");
+    //     exit(3);
+    // }
 
-    printf("Received response: %s\n", response);  // Debug output
+    // printf("Received response: %s\n", response);  // Debug output
     if (read(sockfd, response, sizeof(response)) <= 0) {
         perror("Failed to read response");
         close(sockfd);
