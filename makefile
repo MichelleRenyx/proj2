@@ -1,26 +1,22 @@
-CC = gcc
-CFLAGS = -Wall -g -I/home/linuxbrew/.linuxbrew/opt/openssl@3/include
-LDFLAGS = -L/home/linuxbrew/.linuxbrew/opt/openssl@3/lib -lssl -lcrypto
-DEPFLAGS = -MMD -MP
+CC=gcc
+CFLAGS=-Wall -g
+LDFLAGS=-lssl -lcrypto
 
-SOURCES = main.c imap_connection.c email_retrieval.c email_parsing.c command_executor.c error_handling.c tls_support.c utils.c
-OBJECTS = $(SOURCES:.c=.o)
-DEPS = $(OBJECTS:.o=.d)  # 依赖文件
-EXECUTABLE = outputfile
+all: main
 
-all: $(EXECUTABLE)
+main: main.o connection.o commands.o
+	$(CC) -o main main.o connection.o commands.o $(LDFLAGS)
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
+main.o: main.c
+	$(CC) -c main.c $(CFLAGS)
 
-# 编译规则，包括生成依赖性文件
-%.o: %.c
-	$(CC) -c $(CFLAGS) $(DEPFLAGS) $< -o $@
+connection.o: connection.c
+	$(CC) -c connection.c $(CFLAGS)
+
+commands.o: commands.c
+	$(CC) -c commands.c $(CFLAGS)
 
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLE) $(DEPS)
-
-# 包括自动生成的依赖性文件
--include $(DEPS)
+	rm -f *.o main
 
 .PHONY: all clean
