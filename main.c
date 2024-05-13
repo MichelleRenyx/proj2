@@ -41,15 +41,16 @@ int main(int argc, char *argv[]) {
     int port = use_tls ? IMAP_SSL_PORT : IMAP_PORT;
     SSL *ssl = create_socket(server_name, port, use_tls);
 
-    if (!ssl) {
+    if (ssl == NULL && use_tls) {
         fprintf(stderr, "Failed to establish SSL connection.\n");
         return 2;
     }
 
-
+    // 登录和选择文件夹
     login_imap(ssl, username, password);
     select_folder(ssl, folder);
     
+    // 执行具体命令
     if (strcmp(command, "retrieve") == 0) {
         fetch_email(ssl, messageNum);
     } else if (strcmp(command, "parse") == 0) {
