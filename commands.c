@@ -40,27 +40,23 @@ char* receive_response(int sockfd) {
         return NULL;
     }
 
-    int total_bytes = 0;
-    int nbytes;
-    while (total_bytes < 4095) {
+    int total_bytes = 0, nbytes;
+    do {
         nbytes = recv(sockfd, response + total_bytes, 4095 - total_bytes, 0);
         if (nbytes < 0) {
             perror("recv failed");
             free(response);
             return NULL;
-        }
-        if (nbytes == 0) {  // No more data
-            break;
+        } else if (nbytes == 0) {
+            break; // No more data
         }
         total_bytes += nbytes;
-        response[total_bytes] = '\0';  // Ensure null-termination
-        if (strstr(response, "A01 OK")) {  // Check if the end condition is met
-            break;
-        }
-    }
+        response[total_bytes] = '\0'; // Ensure null-termination
+    } while (total_bytes < 4095 && strstr(response, "A01 OK") == NULL);
 
     return response;
 }
+
 
 
 void login_imap(int sockfd, const char *username, const char *password) {
