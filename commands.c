@@ -39,6 +39,12 @@ void login_imap(int sockfd, const char *username, const char *password) {
     snprintf(command, sizeof(command), "A01 LOGIN %s %s\r\n", username, password);
     send_command(sockfd, command);
     char *response = receive_response(sockfd);
+    if (response == NULL) {
+        printf("Failed to receive response from server.\n");
+        exit(3);
+    }
+
+    printf("Received response: %s\n", response);  // Debug output
     if (strstr(response, "A01 OK") == NULL) {
         printf("Login failure\n");
         free(response);
