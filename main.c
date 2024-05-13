@@ -25,9 +25,8 @@ int main(int argc, char *argv[]) {
         else if (!server_name) server_name = argv[i];
         else if (strcmp(argv[i], "-t") == 0) use_tls = 1;
     }
-
     if (!username || !password || !command || !server_name) {
-        fprintf(stderr, "Usage: %s -u <username> -p <password> [-f <folder>] [-n <messageNum>] <command> <server_name>\n", argv[0]);
+        fprintf(stderr, "Usage: %s -u <username> -p <password> [-f <folder>] [-n <messageNum>] [-t] <command> <server_name>\n", argv[0]);
         return 1;
     }
 
