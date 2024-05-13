@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     const char *command = NULL;
     const char *server_name = NULL;
     const char *messageNum = NULL;
-    int use_tls = 0, port; // 默认不使用TLS
+    int use_tls = 0; // 默认不使用TLS
 
     // 解析命令行参数
     for (int i = 1; i < argc; i++) {
