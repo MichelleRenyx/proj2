@@ -15,16 +15,24 @@ int main(int argc, char *argv[]) {
     int use_tls = 0; // 默认不使用TLS
 
     // 解析命令行参数
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) username = argv[++i];
-        else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) password = argv[++i];
-        else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) folder = argv[++i];
-        else if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) messageNum = argv[++i];
-        else if (strcmp(argv[i], "-t") == 0) use_tls = 1;
-        else if (!command && (strcmp(argv[i], "retrieve") == 0 || strcmp(argv[i], "parse") == 0 || strcmp(argv[i], "mime") == 0 || strcmp(argv[i], "list") == 0)) command = argv[i];
-        else if (!server_name) server_name = argv[i];
+        for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) {
+            username = argv[++i];
+        } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+            password = argv[++i];
+        } else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
+            folder = argv[++i];
+        } else if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
+            messageNum = argv[++i];
+        } else if (strcmp(argv[i], "-t") == 0) {
+            use_tls = 1; // 启用TLS
+        } else if (!command && (strcmp(argv[i], "retrieve") == 0 || strcmp(argv[i], "parse") == 0 || strcmp(argv[i], "mime") == 0 || strcmp(argv[i], "list") == 0)) {
+            command = argv[i];
+        } else if (!server_name) {
+            server_name = argv[i];
+        }
     }
-
+    
     if (!username || !password || !command || !server_name) {
         fprintf(stderr, "Usage: %s -u <username> -p <password> [-f <folder>] [-n <messageNum>] [-t] <command> <server_name>\n", argv[0]);
         return 1;

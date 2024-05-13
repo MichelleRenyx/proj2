@@ -78,38 +78,12 @@ char* receive_response(int sockfd) {
 
 
 
-
-
-// void login_imap(int sockfd, const char *username, const char *password) {
-//     char command[1024];
-//     snprintf(command, sizeof(command), "A01 LOGIN %s %s\r\n", username, password);
-//     send_command(sockfd, command);
-//     char *response = receive_response(sockfd);
-//     if (response == NULL) {
-//         printf("Failed to receive response from server.\n");
-//         exit(3);
-//     }
-
-//     printf("Received response: %s\n", response);  // Debug output
-//     if (strstr(response, "A01 OK") == NULL) {
-//         printf("Login failure\n");
-//         free(response);
-//         exit(3);
-//     }
-//     free(response);
-// }
 void login_imap(int sockfd, const char *username, const char *password) {
     char login_command[1024];
     sprintf(login_command, "a1 LOGIN %s %s\r\n", username, password);
     send_command(sockfd, login_command);
 
     char response[1024];
-    //     if (response == NULL) {
-    //     printf("Failed to receive response from server.\n");
-    //     exit(3);
-    // }
-
-    // printf("Received response: %s\n", response);  // Debug output
     if (read(sockfd, response, sizeof(response)) <= 0) {
         perror("Failed to read response");
         close(sockfd);
