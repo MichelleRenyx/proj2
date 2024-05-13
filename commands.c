@@ -9,13 +9,19 @@
 #include <arpa/inet.h>
 #include <openssl/ssl.h>
 
+// void send_command(int sockfd, const char *command) {
+//     if (send(sockfd, command, strlen(command), 0) <= 0) {
+//         perror("send failed");
+//         exit(EXIT_FAILURE);
+//     }
+// }
 void send_command(int sockfd, const char *command) {
-    if (send(sockfd, command, strlen(command), 0) <= 0) {
-        perror("send failed");
+    if (write(sockfd, command, strlen(command)) < 0) {
+        perror("Failed to send command");
+        close(sockfd);
         exit(EXIT_FAILURE);
     }
 }
-
 // char* receive_response(int sockfd) {
 //     char *response = malloc(4096);
 //     if (!response) {
@@ -40,55 +46,93 @@ char* receive_response(int sockfd) {
         return NULL;
     }
 
-    int total_bytes = 0, nbytes;
-    do {
-        nbytes = recv(sockfd, response + total_bytes, 4095 - total_bytes, 0);
-        if (nbytes < 0) {
-            perror("recv failed");
-            free(response);
-            return NULL;
-        } else if (nbytes == 0) {
-            break; // No more data
+    int total_received = 0;
+    int nbytes;
+    while ((nbytes = recv(sockfd, response + total_received, 4096 - 1 - total_received, 0)) > 0) {
+        total_received += nbytes;
+        // 确保没有超出缓冲区限制
+        if (total_received >= 4096 - 1) {
+            break;
         }
-        total_bytes += nbytes;
-        response[total_bytes] = '\0'; // Ensure null-termination
-    } while (total_bytes < 4095 && strstr(response, "A01 OK") == NULL);
+        // 检查是否接收到完整的IMAP响应行（查找行结束符）
+        if (strstr(response, "\r\n") != NULL) {
+            break;
+        }
+    }
 
+    if (nbytes < 0) {
+        perror("recv failed");
+        free(response);
+        return NULL;
+    }
+
+    if (nbytes == 0 && total_received == 0) {
+        fprintf(stderr, "Connection closed by peer\n");
+        free(response);
+        return NULL;
+    }
+
+    response[total_received] = '\0';
     return response;
 }
 
 
 
+
+// void login_imap(int sockfd, const char *username, const char *password) {
+//     char command[1024];
+//     snprintf(command, sizeof(command), "A01 LOGIN %s %s\r\n", username, password);
+//     send_command(sockfd, command);
+//     char *response = receive_response(sockfd);
+//     if (response == NULL) {
+//         printf("Failed to receive response from server.\n");
+//         exit(3);
+//     }
+
+//     printf("Received response: %s\n", response);  // Debug output
+//     if (strstr(response, "A01 OK") == NULL) {
+//         printf("Login failure\n");
+//         free(response);
+//         exit(3);
+//     }
+//     free(response);
+// }
 void login_imap(int sockfd, const char *username, const char *password) {
-    char command[1024];
-    snprintf(command, sizeof(command), "A01 LOGIN %s %s\r\n", username, password);
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
-    if (response == NULL) {
-        printf("Failed to receive response from server.\n");
-        exit(3);
+    char login_command[1024];
+    sprintf(login_command, "a1 LOGIN %s %s\r\n", username, password);
+    send_command(sockfd, login_command);
+
+    char response[1024];
+    if (read(sockfd, response, sizeof(response)) <= 0) {
+        perror("Failed to read response");
+        close(sockfd);
+        exit(EXIT_FAILURE);
     }
 
-    printf("Received response: %s\n", response);  // Debug output
-    if (strstr(response, "A01 OK") == NULL) {
-        printf("Login failure\n");
-        free(response);
-        exit(3);
+    if (strstr(response, "a1 OK") == NULL) {
+        fprintf(stderr, "Login failed: %s", response);
+        close(sockfd);
+        exit(EXIT_FAILURE);
     }
-    free(response);
 }
 
+
+// void select_folder(int sockfd, const char *folder) {
+//     char command[1024];
+//     snprintf(command, sizeof(command), "A02 SELECT %s\r\n", folder);
+//     send_command(sockfd, command);
+//     char *response = receive_response(sockfd);
+//     if (strstr(response, "A02 OK") == NULL) {
+//         printf("Folder not found\n");
+//         free(response);
+//         exit(3);
+//     }
+//     free(response);
+// }
 void select_folder(int sockfd, const char *folder) {
-    char command[1024];
-    snprintf(command, sizeof(command), "A02 SELECT %s\r\n", folder);
-    send_command(sockfd, command);
-    char *response = receive_response(sockfd);
-    if (strstr(response, "A02 OK") == NULL) {
-        printf("Folder not found\n");
-        free(response);
-        exit(3);
-    }
-    free(response);
+    char select_command[1024];
+    sprintf(select_command, "a2 SELECT %s\r\n", folder);
+    send_command(sockfd, select_command);
 }
 
 void fetch_email(int sockfd, const char *messageNum) {
@@ -226,16 +270,20 @@ void list_email_subjects(int sockfd) {
 
 
 int create_socket(const char *hostname, int port) {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd;
+    struct sockaddr_in server_addr;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
-        perror("Cannot create socket");
+        perror("Socket creation failed");
         exit(2);
     }
 
-    struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
+    
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    
 
     if (inet_pton(AF_INET, hostname, &server_addr.sin_addr) <= 0) {
         perror("Invalid address");
