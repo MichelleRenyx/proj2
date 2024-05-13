@@ -60,7 +60,7 @@ void select_folder(SSL *ssl, const char *folder) {
     free(response);
 }
 
-void fetch_email(SSL *ssl, const char *messageNum) {
+char* fetch_email(SSL *ssl, const char *messageNum) {
     char command[1024];
     snprintf(command, sizeof(command), (messageNum && strlen(messageNum) > 0) ? 
         "A03 FETCH %s BODY.PEEK[]\r\n" : "A03 FETCH 1:* BODY.PEEK[]\r\n", messageNum);

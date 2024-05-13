@@ -1,0 +1,16 @@
+# Object files
+*.o
+
+# Executable
+fetchmail
+
+# Makefile outputs
+*.d
+
+# Editor backups
+*~
+
+# Log files or database files if any
+*.log
+*.sql
+*.sqlite

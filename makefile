@@ -1,22 +1,21 @@
-CC=gcc
-CFLAGS=-Wall -g
-LDFLAGS=-lssl -lcrypto
+CC = gcc
+CFLAGS = -Wall -g -I/usr/include/openssl
+LDFLAGS = -lssl -lcrypto
 
-all: main
+# 添加所有的源文件
+SOURCES = main.c connection.c commands.c utility.c
+OBJECTS = $(SOURCES:.c=.o)
+EXECUTABLE = fetchmail
 
-main: main.o connection.o commands.o
-	$(CC) -o main main.o connection.o commands.o $(LDFLAGS)
+all: $(EXECUTABLE)
 
-main.o: main.c
-	$(CC) -c main.c $(CFLAGS)
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-connection.o: connection.c
-	$(CC) -c connection.c $(CFLAGS)
-
-commands.o: commands.c
-	$(CC) -c commands.c $(CFLAGS)
+%.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.o main
+	rm -f $(OBJECTS) $(EXECUTABLE)
 
 .PHONY: all clean
