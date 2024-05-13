@@ -200,7 +200,7 @@ SSL* create_socket(const char *hostname, int port, int use_tls) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("Cannot create socket");
-        exit(EXIT_FAILURE);
+        exit(2);
     }
 
     struct sockaddr_in server_addr;
@@ -211,33 +211,51 @@ SSL* create_socket(const char *hostname, int port, int use_tls) {
     if (inet_pton(AF_INET, hostname, &server_addr.sin_addr) <= 0) {
         perror("Invalid address");
         close(sockfd);
-        exit(EXIT_FAILURE);
+        exit(2);
     }
 
     if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Connection Failed");
         close(sockfd);
-        exit(EXIT_FAILURE);
+        exit(2);
     }
 
     if (use_tls) {
         SSL_CTX *ctx = init_ssl_context();
+        if (!ctx) {
+            close(sockfd);
+            exit(2);
+        }
+
         SSL *ssl = SSL_new(ctx);
+        if (!ssl) {
+            SSL_CTX_free(ctx);
+            close(sockfd);
+            exit(2);
+        }
+
         SSL_set_fd(ssl, sockfd);
         if (SSL_connect(ssl) != 1) {
             ERR_print_errors_fp(stderr);
-            SSL_shutdown(ssl);
             SSL_free(ssl);
             SSL_CTX_free(ctx);
             close(sockfd);
-            exit(EXIT_FAILURE);
+            exit(2);
         }
+
+        // Ensure the server certificate can be verified
+        if (SSL_get_verify_result(ssl) != X509_V_OK) {
+            fprintf(stderr, "Certificate verification error\n");
+            SSL_free(ssl);
+            SSL_CTX_free(ctx);
+            close(sockfd);
+            exit(2);
+        }
+
         return ssl;
     } else {
         // 非 TLS 连接的处理
-        SSL *ssl = SSL_new(init_ssl_context());  // 创建一个SSL结构，但不启动TLS
-        SSL_set_fd(ssl, sockfd);  // 将socket绑定到SSL结构
-        return ssl;  // 在非TLS模式下也返回SSL结构，但没有启动加密通信
+        return NULL;  // 对于非TLS模式，我们返回NULL表示未使用加密
     }
 }
 
@@ -245,14 +263,22 @@ SSL_CTX* init_ssl_context(void) {
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
-    const SSL_METHOD *method = TLS_client_method();  // 使用更安全的 TLS 方法
+    const SSL_METHOD *method = TLS_client_method();
     SSL_CTX *ctx = SSL_CTX_new(method);
     if (!ctx) {
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);  // 不验证证书
+    // 加载信任的证书路径
+    if (!SSL_CTX_load_verify_locations(ctx, "/path/to/your/cacert.pem", NULL)) {
+        fprintf(stderr, "Failed to load trust certificate\n");
+        SSL_CTX_free(ctx);
+        exit(EXIT_FAILURE);
+    }
+
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);  // 启用证书验证
 
     return ctx;
 }
+

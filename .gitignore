@@ -1,16 +1,10 @@
-# Object files
+# Compiled object files
 *.o
 
-# Executable
+# Executable programs
 fetchmail
 
-# Makefile outputs
-*.d
-
-# Editor backups
-*~
-
-# Log files or database files if any
+# Other files that should not be committed
 *.log
-*.sql
-*.sqlite
+*.txt
+.DS_Store

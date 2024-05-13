@@ -1,5 +1,5 @@
-#include "connection.h"
 #include "commands.h"
+#include "connection.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,15 +13,8 @@ int main(int argc, char *argv[]) {
     const char *server_name = NULL;
     const char *messageNum = NULL;
     int use_tls = 0; // 默认不使用TLS
-    int port = use_tls ? IMAP_SSL_PORT : IMAP_PORT;
-    SSL *ssl = create_socket(server_name, port, use_tls);
 
-    int sockfd = create_socket(server_name, port, use_tls);
-    if (use_tls) {
-        use_tls = 1;
-        sockfd = upgrade_to_tls(sockfd);
-    }
-
+    // 解析命令行参数
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) {
             username = argv[++i];
@@ -32,7 +25,7 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
             messageNum = argv[++i];
         } else if (strcmp(argv[i], "-t") == 0) {
-            use_tls = 1;
+            use_tls = 1; // 启用TLS
         } else if (!command && (strcmp(argv[i], "retrieve") == 0 || strcmp(argv[i], "parse") == 0 || strcmp(argv[i], "mime") == 0 || strcmp(argv[i], "list") == 0)) {
             command = argv[i];
         } else if (!server_name) {
@@ -45,51 +38,34 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    
+    // 根据是否使用TLS设置端口号
+    int port = use_tls ? IMAP_SSL_PORT : IMAP_PORT;
+    SSL *ssl = create_socket(server_name, port, use_tls);
 
-    printf("Username: %s\n", username);
-    printf("Password: %s\n", password);
-    printf("Folder: %s\n", folder);
-    printf("Command: %s\n", command);
-    printf("Server: %s\n", server_name);
-    printf("Message Number: %s\n", messageNum ? messageNum : "Not specified");
-    printf("Use TLS: %d\n", use_tls);
+    if (ssl == NULL && use_tls) {
+        fprintf(stderr, "Failed to establish SSL connection.\n");
+        return 1;
+    }
 
-
+    // 登录和选择文件夹
     login_imap(ssl, username, password);
-
     select_folder(ssl, folder);
     
+    // 执行具体命令
     if (strcmp(command, "retrieve") == 0) {
         fetch_email(ssl, messageNum);
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
-        exit(0);  // 成功检索后退出
-    }
-
-    if (strcmp(command, "parse") == 0) {
+    } else if (strcmp(command, "parse") == 0) {
         parse_email_headers(ssl, messageNum);
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
-        exit(0);  // 成功解析后退出
-    }
-
-    if (strcmp(command, "mime") == 0) {
+    } else if (strcmp(command, "mime") == 0) {
         decode_mime_message(ssl, messageNum);
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
-        exit(0);  // 成功解析后退出
-    }
-
-    if (strcmp(command, "list") == 0) {
+    } else if (strcmp(command, "list") == 0) {
         list_email_subjects(ssl);
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
-        exit(0);  // 成功列出后退出
     }
 
+    // 清理
     SSL_shutdown(ssl);
     SSL_free(ssl);
-    return 0;
+    exit(0); // 成功执行后退出
 }
+
 
