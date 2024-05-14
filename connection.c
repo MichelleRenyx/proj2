@@ -130,21 +130,21 @@ int connect_login(const char *server_name, int tls) {
 
     if (getaddrinfo(server_name, port_str, &hints, &res) != 0) {
         fprintf(stderr, "Cannot resolve hostname %s\n", server_name);
-        return 3;
+        exit(3);
     }
 
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sockfd < 0) {
         perror("Error opening socket");
         freeaddrinfo(res);
-        return 3;
+        exit(3);
     }
 
     if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
         perror("Error connecting to server");
         //close(sockfd);
         freeaddrinfo(res);
-        return 3;
+        exit(3);
     }
 
     // Clean up and return the socket descriptor
