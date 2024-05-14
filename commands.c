@@ -18,15 +18,9 @@
 #include <errno.h>
 #include "utility.h"
 #include "connection.h"
+static int tagNum = 0;
 
-// 模拟 HANDLE_ERR 宏
-#define HANDLE_ERR(call) \
-    if ((call) < 0) { \
-        fprintf(stderr, "Error in %s at line %d\n", #call, __LINE__); \
-        exit(3); \
-    }
 
-// 自定义逐行读取函数
 ssize_t read_line(int sockfd, char *buffer, size_t max_len) {
     ssize_t n, rc;
     char c, *ptr;
@@ -69,35 +63,34 @@ ssize_t read_bytes(int sockfd, char *buffer, size_t num_bytes) {
 
 void retrieve(const char *server_name, const char *username, const char *password, const char *folder, const char *mesg_num, int tls) {
     int sockfd = connect_login(server_name, username, password, tls);
-    char *total = get_total_message(folder, sockfd);
+    int total = get_total_message(folder, sockfd);
 
     char fetch_command[256];
     char tag[10];
-    static int tagNum = 0;
     snprintf(tag, sizeof(tag), "A%d", ++tagNum);
     if (strlen(mesg_num) > 0) {
         snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %s BODY.PEEK[]\r\n", tag, mesg_num);
     } else {
-        snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %s BODY.PEEK[]\r\n", tag, total);
+        snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %d BODY.PEEK[]\r\n", tag, total);
     }
     send(sockfd, fetch_command, strlen(fetch_command), 0);
 
     char buffer[1024];
-    int messageNum, bodyLength;
-
-    HANDLE_ERR(read_line(sockfd, buffer, sizeof(buffer)))
-    HANDLE_ERR(read_line(sockfd, buffer, sizeof(buffer)))
-    if (sscanf(buffer, "* %d FETCH (BODY[] {%d}\r\n", &messageNum, &bodyLength) != 2) {
-        printf("%s", buffer);
+    int messageNum, bodyL;
+    memset(buffer, 0, sizeof(buffer));
+    read_line(sockfd, buffer, sizeof(buffer));
+    if (sscanf(buffer, "* %d FETCH (BODY[] {%d}\r\n", &messageNum, &bodyL) != 2) {
+        printf("妹有FETCH (BODY[] {}  %s", buffer);
         printf("Message not found\n");
         exit(3);
     }
 
-    HANDLE_ERR(read_bytes(sockfd, buffer, bodyLength))
-    printf("%s", buffer);
-
-    HANDLE_ERR(read_line(sockfd, buffer, sizeof(buffer)))
-    HANDLE_ERR(read_line(sockfd, buffer, sizeof(buffer)))
+    read_bytes(sockfd, buffer, bodyL);
+    printf("又来全 %s", buffer);
+    read_line(sockfd, buffer, sizeof(buffer));
+//    printf("又来1 %s", buffer);
+    read_line(sockfd, buffer, sizeof(buffer));
+//    printf("又来2 %s", buffer);
 
     snprintf(fetch_command, sizeof(fetch_command), "%s OK ", tag);
     if (strncasecmp(buffer, fetch_command, strlen(fetch_command)) != 0) {
@@ -191,7 +184,7 @@ void retrieve(const char *server_name, const char *username, const char *passwor
 
 void parse(const char *server_name, const char *username, const char *password, const char *folder, const char *mesg_num, int tls) {
     int sockfd = connect_login(server_name, username, password, tls);
-    char *total = get_total_message(folder, sockfd);
+    int total = get_total_message(folder, sockfd);
 
     char fetch_command[256];
     char tag[10];
@@ -199,7 +192,7 @@ void parse(const char *server_name, const char *username, const char *password, 
     if (strlen(mesg_num) > 0) {
         sprintf(fetch_command, "%s FETCH %s BODY.PEEK[HEADER.FIELDS (FROM TO DATE SUBJECT)]\r\n", tag, mesg_num);
     } else {
-        sprintf(fetch_command, "%s FETCH %s BODY.PEEK[HEADER.FIELDS (FROM TO DATE SUBJECT)]\r\n", tag, total);
+        sprintf(fetch_command, "%s FETCH %d BODY.PEEK[HEADER.FIELDS (FROM TO DATE SUBJECT)]\r\n", tag, total);
     }
     //printf("fetch_command: %s   TO sent\n", fetch_command);
     send(sockfd, fetch_command, strlen(fetch_command), 0);
@@ -288,9 +281,9 @@ void mime(const char *server_name, const char *username, const char *password, c
 void list(const char *server_name, const char *username, const char *password, const char *folder, int tls) {
     int sockfd = connect_login(server_name, username, password, tls);
     char list[8192] = {0};
-    char *total = get_total_message(folder, sockfd);
+    int total = get_total_message(folder, sockfd);
 
-    int total_num = atoi(total);
+    int total_num = total;
     for (int i = 1; i <= total_num; i++) {
         char fetch_command[256];
         char tag[10];

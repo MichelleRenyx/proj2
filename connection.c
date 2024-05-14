@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "commands.h"
 
 
 
@@ -62,10 +63,20 @@ int connect_login(const char *server_name, const char *username, const char *pas
         close(sockfd);
         exit(2);
     }
+
+
+//    // Read response Refactor by readline
+//    if (read_line(sockfd, buffer, sizeof(buffer)) <= 0) {
+//        perror("recv");
+//        close(sockfd);
+//        exit(2);
+//    }
+    printf("connect_login 都打牌%s\n", buffer);
     if (strstr(buffer, "NO") != NULL) {
         fprintf(stderr, "Login failure\n");
         exit(3);
     }
+    read_line(sockfd, buffer, sizeof(buffer));
     // printf("Login success\n");
     return sockfd;
 }

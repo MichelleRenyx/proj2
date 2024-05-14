@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 #include "utility.h"
 #include "commands.h"
 #include "connection.h"
@@ -16,6 +17,12 @@ static int TAG_NUMBER = 10;
 
 
 // }
+
+void toUpperCase(char *str) {
+    for (int i = 0; str[i] ; i++) {
+        str[i] = toupper((unsigned char)str[i]);
+    }
+}
 
 char* generate_tag() {
     static char result[10];
@@ -61,26 +68,36 @@ void print_headers(const char *overview) {
     free(lowercase);
 }
 
-char* get_total_message(const char *folder, int sockfd) {
-    static char total[10];
+int get_total_message(const char *folder, int sockfd) {
+//    static char total[10];
+    int total = 0;
     char select_folder[256];
     sprintf(select_folder, "1 SELECT %s\r\n", folder);
     send(sockfd, select_folder, strlen(select_folder), 0);
 
     char buffer[1024];
-    recv(sockfd, buffer, sizeof(buffer), 0);
-    if (strstr(buffer, "NO Mailbox doesn't exist") != NULL) {
-        fprintf(stderr, "Folder not found\n");
+    int ret;
+    while (true) {
+        read_line(sockfd, buffer, sizeof(buffer));
+//        toUpper(byteList.bytes);
+        toUpperCase(buffer);
+        printf("%s\n", buffer);
+        if(sscanf(buffer,  "* %d EXISTS\r\n", &total) == 1) {
+            ret = total;
+        }
+
+        printf("%d\n", total);
+        if (buffer[0] && buffer[0] != '*') {
+            printf("非空非星号%s\n", buffer);
+            break;
+        }
+    }
+
+    if (strncasecmp(buffer, "1 OK", 4) != 0) {
+        printf("Folder not found\n");
         exit(3);
     }
-
-    char *exists = strstr(buffer, "EXISTS");
-    if (exists != NULL) {
-        strncpy(total, buffer, exists - buffer - 1);
-        total[exists - buffer - 1] = '\0';
-    }
-
-    return total;
+    return ret;
 }
 
 int valid_message_number(const char *mesg_num) {
