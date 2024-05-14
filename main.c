@@ -7,23 +7,23 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
-    char username[256] = {0};
-    char password[256] = {0};
-    char folder[256] = {0};
-    char command[256] = {0};
-    char server_name[256] = {0};
-    char mesg_num[256] = {0};
-    int tls = 0;
+    char *username = NULL;
+    char *password = NULL;
+    char *folder = NULL;
+    char *command = NULL;
+    char *server_name = NULL;
+    char *mesg_num = NULL;
+    int *tls = 0;
 
     read_command_line(argc, argv, username, password, folder, command, server_name, mesg_num, &tls);
     //print all the values read from the command line
-    printf("username: %s\n", username);
-    printf("password: %s\n", password);
-    printf("folder: %s\n", folder);
-    printf("command: %s\n", command);
-    printf("server_name: %s\n", server_name);
-    printf("mesg_num: %s\n", mesg_num);
-    printf("tls: %d\n", tls);
+    // printf("username: %s\n", username);
+    // printf("password: %s\n", password);
+    // printf("folder: %s\n", folder);
+    // printf("command: %s\n", command);
+    // printf("server_name: %s\n", server_name);
+    // printf("mesg_num: %s\n", mesg_num);
+    // printf("tls: %d\n", tls);
     if (strcmp(command, "retrieve") == 0) {
         retrieve(server_name, username, password, folder, mesg_num, tls);
         exit(0);

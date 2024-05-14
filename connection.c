@@ -66,7 +66,7 @@ int connect_login(const char *server_name, const char *username, const char *pas
         fprintf(stderr, "Login failure\n");
         exit(3);
     }
-    printf("Login success\n");
+    // printf("Login success\n");
     return sockfd;
 }
 

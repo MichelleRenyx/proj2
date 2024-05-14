@@ -17,7 +17,9 @@ void read_command_line(int argc, char **argv, char *username, char *password, ch
     int folder_occurs = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) {
+            printf("daozhele");
             strcpy(username, argv[++i]);
+            printf("yedaozhele");
         } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
             strcpy(password, argv[++i]);
         } else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
