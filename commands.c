@@ -62,7 +62,7 @@ ssize_t read_bytes(int sockfd, char *buffer, size_t num_bytes) {
 }
 
 void retrieve(const char *server_name, const char *username, const char *password, const char *folder, const char *mesg_num, int tls) {
-    int sockfd = connect_login(server_name, username, password, tls);
+    int sockfd = connect_login(server_name, tls);
     int total = get_total_message(folder, sockfd);
     // printf("total = %d\n", total);
 
@@ -201,7 +201,7 @@ void retrieve(const char *server_name, const char *username, const char *passwor
 // }
 
 void parse(const char *server_name, const char *username, const char *password, const char *folder, const char *mesg_num, int tls) {
-    int sockfd = connect_login(server_name, username, password, tls);
+    int sockfd = connect_login(server_name, tls);
     int total = get_total_message(folder, sockfd);
 
     char fetch_command[256];
@@ -297,7 +297,7 @@ void mime(const char *server_name, const char *username, const char *password, c
 }
 
 void list(const char *server_name, const char *username, const char *password, const char *folder, int tls) {
-    int sockfd = connect_login(server_name, username, password, tls);
+    int sockfd = connect_login(server_name, tls);
     char list[8192] = {0};
     int total = get_total_message(folder, sockfd);
 
