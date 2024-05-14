@@ -3,7 +3,7 @@
 CC = gcc
 
 # 定义编译选项
-CFLAGS = -Wall
+CFLAGS = -g -Wall
 
 # 定义最终生成的可执行文件名
 EXECUTABLE = fetchmail

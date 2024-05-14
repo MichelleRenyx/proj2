@@ -71,7 +71,7 @@ int connect_login(const char *server_name, const char *username, const char *pas
 //        close(sockfd);
 //        exit(2);
 //    }
-    printf("connect_login 都打牌%s\n", buffer);
+    // printf("connect_login 都打牌%s\n", buffer);
     if (strstr(buffer, "NO") != NULL) {
         fprintf(stderr, "Login failure\n");
         exit(3);
