@@ -29,7 +29,7 @@ int connect_login(const char *server_name, const char *username, const char *pas
     if ((he = gethostbyname(server_name)) == NULL) {
         herror("gethostbyname");
         exit(1);
-    }
+    } else if (he->h_addr_list == NULL || he->h_length <= 0) {exit (3);};
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
