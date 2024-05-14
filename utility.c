@@ -14,6 +14,7 @@ static int TAG_NUMBER = 10;
 
 void read_command_line(int argc, char **argv, char *username, char *password, char *folder, char *command, char *server_name, char *mesg_num, int *tls) {
     *tls = 0;
+    int folder_occurs = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) {
             strcpy(username, argv[++i]);
@@ -21,6 +22,7 @@ void read_command_line(int argc, char **argv, char *username, char *password, ch
             strcpy(password, argv[++i]);
         } else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
             strcpy(folder, argv[++i]);
+            folder_occurs = 1;
         } else if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
             strcpy(mesg_num, argv[++i]);
         } else if (strcmp(argv[i], "-t") == 0) {
@@ -32,7 +34,7 @@ void read_command_line(int argc, char **argv, char *username, char *password, ch
         }
     }
 
-    if (strlen(folder) == 0) {
+    if (!folder_occurs) {
         strcpy(folder, "INBOX");
     }
 

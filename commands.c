@@ -40,7 +40,8 @@ void retrieve(const char *server_name, const char *username, const char *passwor
             break;
         }
         if (start && strstr(buffer, "FETCH") == NULL) {
-            strcat(response, buffer);
+            // strcat(response, buffer);
+            strncat(response, buffer, sizeof(response) - strlen(response) - 1);
         }
     }
 
@@ -79,7 +80,8 @@ void parse(const char *server_name, const char *username, const char *password, 
             break;
         }
         if (start) {
-            strcat(response, buffer);
+            // strcat(response, buffer);
+            strncat(response, buffer, sizeof(response) - strlen(response) - 1);
         }
     }
 
@@ -99,7 +101,7 @@ void mime(const char *server_name, const char *username, const char *password, c
         exit(4);
     } else {
         char boundary[256];
-        strcpy(boundary, strstr(response, "boundary=") + 10);
+        strncpy(boundary, strstr(response, "boundary=") + 10, sizeof(boundary) - 1);
         strtok(boundary, "\";");
 
         char *first_match = NULL;
@@ -130,8 +132,10 @@ void mime(const char *server_name, const char *username, const char *password, c
             if (strstr(line, boundary) != NULL || strstr(line, boundary) != NULL) {
                 break;
             }
-            strcat(result, line);
-            strcat(result, "\r\n");
+            // strcat(result, line);
+            // strcat(result, "\r\n");
+            strncat(result, line, sizeof(result) - strlen(result) - 1);
+            strncat(result, "\r\n", sizeof(result) - strlen(result) - 1);
             line = strtok(NULL, "\r\n");
         }
 
@@ -149,12 +153,14 @@ void list(const char *server_name, const char *username, const char *password, c
         char fetch_command[256];
         char tag[10];
         strcpy(tag, generate_tag());
-        sprintf(fetch_command, "%s FETCH %d BODY.PEEK[HEADER.FIELDS (SUBJECT)]\r\n", tag, i);
+        //sprintf(fetch_command, "%s FETCH %d BODY.PEEK[HEADER.FIELDS (SUBJECT)]\r\n", tag, i);
+        snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %d BODY.PEEK[HEADER.FIELDS (SUBJECT)]\r\n", tag, i);
         send(sockfd, fetch_command, strlen(fetch_command), 0);
 
         char buffer[1024];
         while (recv(sockfd, buffer, sizeof(buffer), 0) > 0) {
-            strcat(list, buffer);
+            // strcat(list, buffer);
+            strncat(list, buffer, sizeof(list) - strlen(list) - 1);
             if (strstr(buffer, "ok fetch completed") != NULL) {
                 break;
             }
