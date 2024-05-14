@@ -1,12 +1,10 @@
-// #ifndef CONNECTION_H
-// #define CONNECTION_H
+#ifndef CONNECTION_H
+#define CONNECTION_H
 
 // #define IMAP_PORT 143
 // #define IMAP_SSL_PORT 993
 
+int connect_login(const char *server_name, const char *username, const char *password, int tls);
+void safe_disconnect(int sockfd);
 
-// void send_command(SSL *ssl, const char *command);
-// char* receive_response(SSL *ssl);
-
-
-// #endif
+#endif // CONNECTION_H

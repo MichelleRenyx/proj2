@@ -9,7 +9,7 @@ CFLAGS = -Wall
 EXECUTABLE = fetchmail
 
 # 定义需要编译的源文件
-SOURCES = main.c connection.c commands.c
+SOURCES = main.c connection.c commands.c utility.c
 
 # 通过替换 .c 为 .o 从 SOURCES 变量中得到对象文件列表
 OBJECTS = $(SOURCES:.c=.o)
