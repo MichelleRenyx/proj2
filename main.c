@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     char *command = NULL;
     char *server_name = NULL;
     char *mesg_num = NULL;
-    int *tls = 0;
+    int tls = 0;
 
     read_command_line(argc, argv, username, password, folder, command, server_name, mesg_num, &tls);
     //print all the values read from the command line
