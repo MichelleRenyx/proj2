@@ -64,26 +64,35 @@ ssize_t read_bytes(int sockfd, char *buffer, size_t num_bytes) {
 void retrieve(const char *server_name, const char *username, const char *password, const char *folder, const char *mesg_num, int tls) {
     int sockfd = connect_login(server_name, username, password, tls);
     int total = get_total_message(folder, sockfd);
+    printf("total = %d\n", total);
 
-    char fetch_command[256];
-    char tag[10];
-    snprintf(tag, sizeof(tag), "A%d", ++tagNum);
-    if (strlen(mesg_num) > 0) {
-        snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %s BODY.PEEK[]\r\n", tag, mesg_num);
+    char fetch_command[1024];
+//    char tag[10];
+//    snprintf(tag, sizeof(tag), "A%d", ++tagNum);
+//    printf("tag %s\n", tag);
+    printf("mesg_num %s\n", mesg_num);
+    if (mesg_num) {
+        sprintf(fetch_command, "A%d FETCH %s BODY.PEEK[]\r\n", ++tagNum, mesg_num);
+//        printf("strlen(mesg_num) > 0 fetch_command %s\n", fetch_command);
+        printf("妹");
     } else {
-        snprintf(fetch_command, sizeof(fetch_command), "%s FETCH %d BODY.PEEK[]\r\n", tag, total);
+        sprintf(fetch_command, "A%d FETCH %d BODY.PEEK[]\r\n", ++tagNum, total);
+//        printf("strlen(mesg_num) bu> 0 fetch_command %s\n", fetch_command);
     }
+    printf("妹");printf("妹");printf("妹");
     send(sockfd, fetch_command, strlen(fetch_command), 0);
 
+    printf("send了");
     char buffer[1024];
     int messageNum, bodyL;
-    memset(buffer, 0, sizeof(buffer));
+//    memset(buffer, 0, sizeof(buffer));
     read_line(sockfd, buffer, sizeof(buffer));
     if (sscanf(buffer, "* %d FETCH (BODY[] {%d}\r\n", &messageNum, &bodyL) != 2) {
         printf("妹有FETCH (BODY[] {}  %s", buffer);
         printf("Message not found\n");
         exit(3);
     }
+    printf("bodyL = %d", bodyL);
 
     read_bytes(sockfd, buffer, bodyL);
     printf("又来全 %s", buffer);
@@ -92,7 +101,7 @@ void retrieve(const char *server_name, const char *username, const char *passwor
     read_line(sockfd, buffer, sizeof(buffer));
 //    printf("又来2 %s", buffer);
 
-    snprintf(fetch_command, sizeof(fetch_command), "%s OK ", tag);
+    snprintf(fetch_command, sizeof(fetch_command), "A%d OK ", messageNum);
     if (strncasecmp(buffer, fetch_command, strlen(fetch_command)) != 0) {
         printf("Message not found\n");
         exit(3);

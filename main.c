@@ -87,13 +87,13 @@ int main(int argc, char **argv) {
         exit(1);
     }
     //print all the values read from the command line
-    // printf("username: %s\n", username);
-    // printf("password: %s\n", password);
-    // printf("folder: %s\n", folder);
-    // printf("command: %s\n", command);
-    // printf("server_name: %s\n", server_name);
-    // printf("mesg_num: %s\n", mesg_num);
-    // printf("tls: %d\n", tls);
+     printf("username: %s\n", username);
+     printf("password: %s\n", password);
+     printf("folder: %s\n", folder);
+     printf("command: %s\n", command);
+     printf("server_name: %s\n", server_name);
+     printf("mesg_num: %s\n", mesg_num);
+     printf("tls: %d\n", tls);
     if (strcmp(command, "retrieve") == 0) {
         retrieve(server_name, username, password, folder, mesg_num, tls);
         exit(0);

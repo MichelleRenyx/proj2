@@ -76,17 +76,19 @@ int get_total_message(const char *folder, int sockfd) {
     send(sockfd, select_folder, strlen(select_folder), 0);
 
     char buffer[1024];
-    int ret;
+    int ret;bool flag = false;
     while (true) {
+        memset(buffer, 0, sizeof(buffer));
         read_line(sockfd, buffer, sizeof(buffer));
 //        toUpper(byteList.bytes);
         toUpperCase(buffer);
         printf("%s\n", buffer);
-        if(sscanf(buffer,  "* %d EXISTS\r\n", &total) == 1) {
+        if(!flag && sscanf(buffer,  "* %d EXISTS\r\n", &total) == 1) {
             ret = total;
+            flag = true;
         }
 
-        printf("%d\n", total);
+        printf("%d\n", ret);
         if (buffer[0] && buffer[0] != '*') {
             printf("非空非星号%s\n", buffer);
             break;
