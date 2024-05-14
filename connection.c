@@ -45,8 +45,8 @@ int connect_login(const char *server_name, const char *username, const char *pas
     // Connect to the server
     if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("connect");
-        close(sockfd);
-        exit(2);
+        // close(sockfd);
+        exit(3);
     }
 
     // Send LOGIN command
